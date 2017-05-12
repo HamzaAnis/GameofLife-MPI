@@ -103,46 +103,104 @@ class LifeEnv extends Canvas {
         }
 
 
-		for (int i = 0; i < N; i++) {
-			for (int j = 0; j < N; j++) {
+		swap = current;
+		current = update;
+		update = swap;
+		repaint();
+	}
+	
+
+	private int[] Calculate(int[] inArray) {
+		int outArray[] = new int[2500];
+		int twoDOutArray[][] = new int[25][100];
+		int workingArray[][] = new int[27][100];
+		int newCount = 0;
+
+		for (int i = 0; i < 27; i++) {
+			for (int j = 0; j < 100; j++) {
+				workingArray[i][j] = inArray[newCount];
+				newCount++;
+			}
+		}
+
+		for (int i = 1; i < 26; i++) {
+			for (int j = 0; j < 100; j++) {
 				int im = (i + N - 1) % N;
 				int ip = (i + 1) % N;
 				int jm = (j + N - 1) % N;
 				int jp = (j + 1) % N;
-				switch (current[im][jm] + current[im][j] + current[im][jp] + current[i][jm] + current[i][jp]
-						+ current[ip][jm] + current[ip][j] + current[ip][jp]) {
+				switch (workingArray[im][jm] + workingArray[im][j] + workingArray[im][jp] + workingArray[i][jm]
+						+ workingArray[i][jp] + workingArray[ip][jm] + workingArray[ip][j] + workingArray[ip][jp]) {
 				case 0:
 				case 1:
-					update[i][j] = 0;
+					twoDOutArray[i - 1][j] = 0;
 					break;
 				case 2:
-					update[i][j] = current[i][j];
+					twoDOutArray[i - 1][j] = workingArray[i][j];
 					break;
 				case 3:
-					update[i][j] = 1;
+					twoDOutArray[i - 1][j] = 1;
 					break;
 				case 4:
 				case 5:
 				case 6:
 				case 7:
 				case 8:
-					update[i][j] = 0;
+					twoDOutArray[i - 1][j] = 0;
 					break;
 				}
 
-				// Slow things down so that you can see them
-				long iters = 10000;
-				do {
-				} while (--iters > 0);
+			}
+			// Slow things down so that you can see them
+//			long iters = 10000;
+//			do {
+//			} while (--iters > 0);
+		}
+		newCount = 0;
+		for (int i = 0; i < 25; i++) {
+			for (int j = 0; j < 100; j++) {
+				outArray[newCount] = twoDOutArray[i][j];
+				newCount++;
+			}
+		}
+		return outArray;
+	}
+
+	
+
+	private int[] sendArrayMaker() {
+		int rank = MPI.COMM_WORLD.Rank();
+		int size = MPI.COMM_WORLD.Size();
+		int[] sendArray = new int[10801];// 2700 x4, 27 rows per process.
+		int count = 0;
+		for (int i = 0; i < size; i++) {
+			int sp = i * 25; // "Start Point" for each ranks group of numbers
+			int im = (sp + current[0].length - 1) % current[0].length;
+			int ip = (sp + 24 + 1) % current[0].length;
+			for (int j = 0; j < 100; j++) {
+				try {
+					sendArray[count] = current[im][j];
+					count++;
+				} catch (Exception e) {
+					System.out.println("Exception is " + e);
+					System.out.println("The count is " + count);
+					// TODO: handle exception
+				}
+			}
+			for (int j = 1; j < 26; j++) {
+				for (int k = 0; k < 100; k++) {
+					sendArray[count] = current[j + sp - 1][k];
+					count++;
+				}
+			}
+			for (int j = 0; j < 100; j++) {
+				sendArray[count] = current[ip][j];
+				count++;
 			}
 		}
 
-		swap = current;
-		current = update;
-		update = swap;
-		repaint();
+		return sendArray;
 	}
-
 	// Draw the points that have value 1
 	public void paint(Graphics g) {
 		for (int i = 0; i < N; i++) {
