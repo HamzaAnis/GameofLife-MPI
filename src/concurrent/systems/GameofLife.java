@@ -1,9 +1,6 @@
 package concurrent.systems;
 
 import java.awt.*;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Scanner;
 
 import javax.swing.JFrame;
@@ -22,7 +19,7 @@ public class GameofLife extends Applet {
 		new Worker(this).start();
 	}
 
-	public void work() throws IOException {
+	public void work() {
 		while (true) {
 			// Just sit in a loop running forever
 			env.run1Generation();
@@ -53,9 +50,6 @@ class LifeEnv extends Canvas {
 	// Width and height of environment
 	private static final int N = 100;
 	private static final int CANVAS_SIZE = 800;
-	
-	FileWriter fstream;
-	BufferedWriter out;
 
 	public LifeEnv() {
 		update = new int[N][N];
@@ -72,18 +66,11 @@ class LifeEnv extends Canvas {
 		setSize(CANVAS_SIZE, CANVAS_SIZE);
 	}
 
-	public void run1Generation() throws IOException {
+	public void run1Generation() {
 		// This method is where the processes meet.
 		// This method also acts as MPI.Barrier. I
 		// safely send all the processes here and they would wait.
 
-		try {
-			fstream = new FileWriter("Log.txt");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
 		// To compute the time taken by each Generation in the process
 		long startTime = System.nanoTime();
 
@@ -120,15 +107,14 @@ class LifeEnv extends Canvas {
 			int newCount = 0;
 			for (int i = 0; i < 100; i++) {
 				for (int j = 0; j < 100; j++) {
-					// try{
+					try{
 					update[i][j] = later[newCount];
-					newCount++;
-					// }
-					// catch (Exception e) {
-					// System.out.println(e);
-					// System.out.println("New Count is "+newCount);
-					// System.out.println("Length is "+later.length);
-					// }
+					newCount++;}
+					catch (Exception e) {
+						System.out.println(e);
+						System.out.println("New Count is "+newCount);
+						System.out.println("Length is "+later.length);
+					}
 					long iters = 10000;
 					do {
 					} while (--iters > 0);
@@ -140,16 +126,8 @@ class LifeEnv extends Canvas {
 			repaint();
 			// used to show how long one iteration takes
 			long endTime = System.nanoTime();
-			long duration = (endTime - startTime) / 1000000; // converting to
-																// seconds
+			long duration = (endTime - startTime) / 1000000; // converting to seconds
 			System.out.println("One generation executes in: " + duration + " miliseconds");
-			try {
-				out.write(Long.toString(duration));
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				out.close();
-			}
 		}
 	}
 
@@ -159,7 +137,7 @@ class LifeEnv extends Canvas {
 		int sendArray[][] = new int[27][100];
 		int newCount = 0;
 
-		// Making the 2d array into 1D
+		//Making the 2d array into 1D
 		for (int i = 0; i < 27; i++) {
 			for (int j = 0; j < 100; j++) {
 				sendArray[i][j] = inArray[newCount];
@@ -173,8 +151,8 @@ class LifeEnv extends Canvas {
 				int ip = (i + 1) % N;
 				int jm = (j + N - 1) % N;
 				int jp = (j + 1) % N;
-				switch (sendArray[im][jm] + sendArray[im][j] + sendArray[im][jp] + sendArray[i][jm] + sendArray[i][jp]
-						+ sendArray[ip][jm] + sendArray[ip][j] + sendArray[ip][jp]) {
+				switch (sendArray[im][jm] + sendArray[im][j] + sendArray[im][jp] + sendArray[i][jm]
+						+ sendArray[i][jp] + sendArray[ip][jm] + sendArray[ip][j] + sendArray[ip][jp]) {
 				case 0:
 				case 1:
 					scatterArray2D[i - 1][j] = 0;
@@ -285,12 +263,7 @@ class Worker extends Thread {
 	}
 
 	public void run() {
-		try {
-			game.work();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		game.work();
 	}
 }
 
@@ -299,8 +272,7 @@ class ThreadStart {
 		MPI.Init(args);
 		int myRank = MPI.COMM_WORLD.Rank();
 		GameofLife g = new GameofLife();
-		// When the process will start with rank 0 it will initiaize the window
-		// and start the genrartions
+		// When the process will start with rank 0 it will initiaize the window and start the genrartions
 		if (myRank == 0) {
 			JFrame frame = new JFrame();
 			frame.getContentPane().add(g);
@@ -312,8 +284,7 @@ class ThreadStart {
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			g.init();
 			MPI.Finalize();
-		} else { // All the other processes will meet the first process at the
-					// LifeEnv.runOneIteration method
+		} else { //All the other processes will meet the first process at the LifeEnv.runOneIteration method
 			g.init();
 		}
 
