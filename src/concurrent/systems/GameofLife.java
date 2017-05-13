@@ -55,7 +55,8 @@ class LifeEnv extends Canvas {
 	// Width and height of environment
 	private static final int N = 100;
 	private static final int CANVAS_SIZE = 800;
-
+	
+	private static int gener=0;
 	public LifeEnv() {
 		update = new int[N][N];
 		current = new int[N][N];
@@ -132,8 +133,9 @@ class LifeEnv extends Canvas {
 			// used to show how long one iteration takes
 			long endTime = System.nanoTime();
 			long duration = (endTime - startTime) / 1000000; // converting to
-																// mili seconds
-			System.out.println("One generation executes in: " + duration + " miliseconds");
+																// milli seconds
+			System.out.println("Generation # "+gener+" execution time = " + duration + "ms");
+			gener++;
 		}
 	}
 
