@@ -100,7 +100,7 @@ class LifeEnv extends Canvas {
 
 		int finalArray[] = new int[2500];
 		int recvSize = 2500;
-		finalArray = Calculate(localin); // calculate the ranks 
+		finalArray = Algorithm(localin); // calculate the ranks 
 
 		if (rank == 0) {// gather all of the calculated arrays
 			MPI.COMM_WORLD.Gather(finalArray, 0, recvSize, MPI.INT, later, 0, recvSize, MPI.INT, 0);
@@ -137,7 +137,7 @@ class LifeEnv extends Canvas {
 		}
 	}
 
-	private int[] Calculate(int[] inArray) {
+	private int[] Algorithm(int[] inArray) {
 		int scatterArray[] = new int[2500];
 		int scatterArray2D[][] = new int[25][100];
 		int sendArray[][] = new int[27][100];
