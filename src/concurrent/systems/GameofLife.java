@@ -83,7 +83,7 @@ class LifeEnv extends Canvas {
 		int size = MPI.COMM_WORLD.Size();
 
 		int sendsize = 2700; // 2700 for each item with processes greater than 4
-		int[] sendArray = new int[size * sendsize];//making array accoriding to the processes
+		int[] sendArray = new int[size * sendsize];//making array according to the processes
 													// process.
 		int[] localin = new int[sendsize];
 		int later[] = new int[size * sendsize];
@@ -132,7 +132,7 @@ class LifeEnv extends Canvas {
 			// used to show how long one iteration takes
 			long endTime = System.nanoTime();
 			long duration = (endTime - startTime) / 1000000; // converting to
-																// seconds
+																// mili seconds
 			System.out.println("One generation executes in: " + duration + " miliseconds");
 		}
 	}
