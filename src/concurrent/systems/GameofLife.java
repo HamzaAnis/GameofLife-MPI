@@ -82,13 +82,11 @@ class LifeEnv extends Canvas {
 		int rank = MPI.COMM_WORLD.Rank();
 		int size = MPI.COMM_WORLD.Size();
 
-		int sendsize = 10800 / size; // 2700 for each item with processes
-										// greater than 4
-		int[] sendArray = new int[10800];// making array accoriding to the
-											// processes
-											// process.
+		int sendsize = 2700; // 2700 for each item with processes greater than 4
+		int[] sendArray = new int[size * sendsize];//making array accoriding to the processes
+													// process.
 		int[] localin = new int[sendsize];
-		int later[] = new int[10800];
+		int later[] = new int[size * sendsize];
 
 		if (rank == 0) { // rank 0 splits the array into segments.
 			sendArray = scatterArrayMaker(sendsize);
@@ -102,7 +100,7 @@ class LifeEnv extends Canvas {
 
 		int finalArray[] = new int[2500];
 		int recvSize = 2500;
-		finalArray = Calculate(localin); // calculate the ranks
+		finalArray = Calculate(localin); // calculate the ranks 
 
 		if (rank == 0) {// gather all of the calculated arrays
 			MPI.COMM_WORLD.Gather(finalArray, 0, recvSize, MPI.INT, later, 0, recvSize, MPI.INT, 0);
@@ -198,8 +196,8 @@ class LifeEnv extends Canvas {
 
 	private int[] scatterArrayMaker(int sendsize) {
 		int size = MPI.COMM_WORLD.Size();
-		int[] sendArray = new int[10801];// 2700 x4, 27 rows per
-											// process.
+		int[] sendArray = new int[(size * sendsize) + 1];// 2700 x4, 27 rows per
+															// process.
 		int count = 0;
 		for (int i = 0; i < size; i++) {
 			int sp = i * 25; // "Start Point" for each ranks group of numbers
@@ -221,20 +219,14 @@ class LifeEnv extends Canvas {
 						count++;
 					} catch (Exception e) {
 						System.out.println("Exception is " + e);
-						System.out.println("count1 is " + (j + sp - 1) % N);
+						System.out.println("count1 is " + (j + sp - 1));
 						System.out.println("The size is " + sendArray.length);
 					}
 				}
 			}
 			for (int j = 0; j < 100; j++) {
-				try {
-					sendArray[count] = current[ip][j];
-					count++;
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.out.println("Ip is " + ip);
-					System.out.println("Length "+sendArray.length+" Count "+count);
-				}
+				sendArray[count] = current[ip][j];
+				count++;
 			}
 		}
 
