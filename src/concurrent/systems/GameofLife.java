@@ -1,14 +1,18 @@
 package concurrent.systems;
 
-import java.awt.*;
-import java.util.Scanner;
+import java.applet.Applet;
+import java.awt.BorderLayout;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
 
 import javax.swing.JFrame;
 
 import mpi.MPI;
 
-import java.applet.*;
-
+@SuppressWarnings("serial")
 public class GameofLife extends Applet {
 
 	private LifeEnv env;
@@ -30,11 +34,12 @@ public class GameofLife extends Applet {
 	private void build(Container f) {
 		setLayout(new BorderLayout());
 		env = new LifeEnv();
-		env.setBackground(Color.white);
+		env.setBackground(Color.decode("#AA7739"));
 		f.add("Center", env);
 	}
 }
 
+@SuppressWarnings("serial")
 class LifeEnv extends Canvas {
 	// This holds the data structures for the game and computes the currents
 	// The update environment
@@ -46,7 +51,7 @@ class LifeEnv extends Canvas {
 
 	// private static final variables are constants
 	private static final int POINT_SIZE = 7;
-	private static final Color POINT_COLOR = Color.blue;
+	private static final Color POINT_COLOR = Color.decode("#FFD9AA");
 	// Width and height of environment
 	private static final int N = 100;
 	private static final int CANVAS_SIZE = 800;
@@ -77,8 +82,8 @@ class LifeEnv extends Canvas {
 		int rank = MPI.COMM_WORLD.Rank();
 		int size = MPI.COMM_WORLD.Size();
 
-		int sendsize = 2700; // 2700 for each item with processe greater than 4
-		int[] sendArray = new int[size * sendsize];// 2700 x4, 27 rows per
+		int sendsize = 2700; // 2700 for each item with processes greater than 4
+		int[] sendArray = new int[size * sendsize];//making array accoriding to the processes
 													// process.
 		int[] localin = new int[sendsize];
 		int later[] = new int[size * sendsize];
@@ -95,7 +100,7 @@ class LifeEnv extends Canvas {
 
 		int finalArray[] = new int[2500];
 		int recvSize = 2500;
-		finalArray = Calculate(localin); // calculate the ranks chunk
+		finalArray = Calculate(localin); // calculate the ranks 
 
 		if (rank == 0) {// gather all of the calculated arrays
 			MPI.COMM_WORLD.Gather(finalArray, 0, recvSize, MPI.INT, later, 0, recvSize, MPI.INT, 0);
@@ -107,13 +112,13 @@ class LifeEnv extends Canvas {
 			int newCount = 0;
 			for (int i = 0; i < 100; i++) {
 				for (int j = 0; j < 100; j++) {
-					try{
-					update[i][j] = later[newCount];
-					newCount++;}
-					catch (Exception e) {
+					try {
+						update[i][j] = later[newCount];
+						newCount++;
+					} catch (Exception e) {
 						System.out.println(e);
-						System.out.println("New Count is "+newCount);
-						System.out.println("Length is "+later.length);
+						System.out.println("New Count is " + newCount);
+						System.out.println("Length is " + later.length);
 					}
 					long iters = 10000;
 					do {
@@ -126,7 +131,8 @@ class LifeEnv extends Canvas {
 			repaint();
 			// used to show how long one iteration takes
 			long endTime = System.nanoTime();
-			long duration = (endTime - startTime) / 1000000; // converting to seconds
+			long duration = (endTime - startTime) / 1000000; // converting to
+																// seconds
 			System.out.println("One generation executes in: " + duration + " miliseconds");
 		}
 	}
@@ -137,7 +143,7 @@ class LifeEnv extends Canvas {
 		int sendArray[][] = new int[27][100];
 		int newCount = 0;
 
-		//Making the 2d array into 1D
+		// Making the 2d array into 1D
 		for (int i = 0; i < 27; i++) {
 			for (int j = 0; j < 100; j++) {
 				sendArray[i][j] = inArray[newCount];
@@ -151,8 +157,8 @@ class LifeEnv extends Canvas {
 				int ip = (i + 1) % N;
 				int jm = (j + N - 1) % N;
 				int jp = (j + 1) % N;
-				switch (sendArray[im][jm] + sendArray[im][j] + sendArray[im][jp] + sendArray[i][jm]
-						+ sendArray[i][jp] + sendArray[ip][jm] + sendArray[ip][j] + sendArray[ip][jp]) {
+				switch (sendArray[im][jm] + sendArray[im][j] + sendArray[im][jp] + sendArray[i][jm] + sendArray[i][jp]
+						+ sendArray[ip][jm] + sendArray[ip][j] + sendArray[ip][jp]) {
 				case 0:
 				case 1:
 					scatterArray2D[i - 1][j] = 0;
@@ -272,7 +278,8 @@ class ThreadStart {
 		MPI.Init(args);
 		int myRank = MPI.COMM_WORLD.Rank();
 		GameofLife g = new GameofLife();
-		// When the process will start with rank 0 it will initiaize the window and start the genrartions
+		// When the process will start with rank 0 it will initiaize the window
+		// and start the genrartions
 		if (myRank == 0) {
 			JFrame frame = new JFrame();
 			frame.getContentPane().add(g);
@@ -284,7 +291,8 @@ class ThreadStart {
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			g.init();
 			MPI.Finalize();
-		} else { //All the other processes will meet the first process at the LifeEnv.runOneIteration method
+		} else { // All the other processes will meet the first process at the
+					// LifeEnv.runOneIteration method
 			g.init();
 		}
 
