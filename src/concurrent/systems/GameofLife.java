@@ -1,6 +1,7 @@
 package concurrent.systems;
 
 import java.awt.*;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 
@@ -54,7 +55,7 @@ class LifeEnv extends Canvas {
 		update = new int[N][N];
 		current = new int[N][N];
 
-//		// Pattern
+		// // Pattern
 		for (int i = 0; i < N; i++) {
 			current[0][i] = 1;
 			current[99][i] = 1;
@@ -62,7 +63,6 @@ class LifeEnv extends Canvas {
 			current[i][0] = 1;
 		}
 
-        
 		setSize(CANVAS_SIZE, CANVAS_SIZE);
 	}
 
@@ -76,13 +76,14 @@ class LifeEnv extends Canvas {
 		int rank = MPI.COMM_WORLD.Rank();
 		int size = MPI.COMM_WORLD.Size();
 
-		int[] sendArray = new int[10800];// 2700 x4, 27 rows per process.
-		int[] localin = new int[2700];
-		int later[] = new int[10800];
-		int sendsize = 10800 / size; // 2700 with 4 processes
+		int sendsize = 2700; // 2700 with 4 processes
+		int[] sendArray = new int[size * sendsize];// 2700 x4, 27 rows per
+													// process.
+		int[] localin = new int[sendsize];
+		int later[] = new int[size * sendsize];
 
 		if (rank == 0) { // rank 0 splits the array into segments.
-			sendArray = sendArrayMaker();
+			sendArray = sendArrayMaker(sendsize);
 		}
 
 		if (rank == 0) { // send the array out
@@ -101,25 +102,27 @@ class LifeEnv extends Canvas {
 			MPI.COMM_WORLD.Gather(finalArray, 0, recvSize, MPI.INT, later, 0, recvSize, MPI.INT, 0);
 		}
 
-	    if(rank == 0){ //unflatten into 2d array
-            int newCount = 0;
+		if (rank == 0) { // unflatten into 2d array
+			int newCount = 0;
 
-            for (int i = 0; i < 100; i++) {
-                for (int j = 0; j < 100; j++) {
-                    update[i][j] = later[newCount];
-                    newCount++;
-                    long iters = 10000;
-                    do {
-                    } while (--iters > 0);
-                }
-            }
-            swap = current; current = update; update = swap;
-            repaint();
-            //used to show how long one iteration takes
-            long endTime = System.nanoTime();
-            long duration = (endTime - sTime)/1000000;
-            System.out.println("One aaiteration executes in: " + duration + " miliseconds");
-        }
+			for (int i = 0; i < 100; i++) {
+				for (int j = 0; j < 100; j++) {
+					update[i][j] = later[newCount];
+					newCount++;
+					long iters = 10000;
+					do {
+					} while (--iters > 0);
+				}
+			}
+			swap = current;
+			current = update;
+			update = swap;
+			repaint();
+			// used to show how long one iteration takes
+			long endTime = System.nanoTime();
+			long duration = (endTime - sTime) / 1000000;
+			System.out.println("One iteration - executes in: " + duration + " miliseconds");
+		}
 	}
 
 	private int[] Calculate(int[] inArray) {
@@ -163,10 +166,10 @@ class LifeEnv extends Canvas {
 				}
 
 			}
-//			 Slow things down so that you can see them
-			 long iters = 10000;
-			 do {
-			 } while (--iters > 0);
+			// Slow things down so that you can see them
+			long iters = 10000;
+			do {
+			} while (--iters > 0);
 		}
 		newCount = 0;
 		for (int i = 0; i < 25; i++) {
@@ -178,10 +181,10 @@ class LifeEnv extends Canvas {
 		return outArray;
 	}
 
-	private int[] sendArrayMaker() {
+	private int[] sendArrayMaker(int sendsize) {
 		int rank = MPI.COMM_WORLD.Rank();
 		int size = MPI.COMM_WORLD.Size();
-		int[] sendArray = new int[10801];// 2700 x4, 27 rows per process.
+		int[] sendArray = new int[(size*sendsize)+1];// 2700 x4, 27 rows per process.
 		int count = 0;
 		for (int i = 0; i < size; i++) {
 			int sp = i * 25; // "Start Point" for each ranks group of numbers
@@ -198,8 +201,15 @@ class LifeEnv extends Canvas {
 			}
 			for (int j = 1; j < 26; j++) {
 				for (int k = 0; k < 100; k++) {
-					sendArray[count] = current[j + sp - 1][k];
-					count++;
+					try{
+						sendArray[count] = current[(j + sp - 1)%100][k];
+						count++;						
+					}
+					catch (Exception e) {
+						System.out.println("Exception is "+e);
+						System.out.println("Count1 is "+(j+sp-1));
+						System.out.println("The size is "+sendArray.length);
+					}
 				}
 			}
 			for (int j = 0; j < 100; j++) {
